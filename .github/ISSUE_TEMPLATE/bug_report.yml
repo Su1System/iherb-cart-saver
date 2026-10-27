@@ -1,0 +1,36 @@
+name: Bug report / 问题反馈
+description: Something did not work as expected / 功能异常
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Reports are public. Remove personal details, addresses, order numbers and account information. No data is attached automatically. / 反馈公开，请先遮住个人资料。"
+  - type: input
+    id: version
+    attributes:
+      label: Extension and Chrome version / 扩展及 Chrome 版本
+      placeholder: "Cart Saver 0.3.1; Chrome 140"
+    validations:
+      required: true
+  - type: dropdown
+    id: country
+    attributes:
+      label: Delivery country / 收货国家
+      options:
+        - Australia
+        - United States
+        - Singapore
+        - Another country
+        - Prefer not to say
+  - type: input
+    id: currency
+    attributes:
+      label: Display currency / 显示币种
+      placeholder: AUD / USD / SGD
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps, expected result and actual result / 操作及预期与实际结果
+      description: Include any visible error text. A redacted screenshot is optional.
+    validations:
+      required: true

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Help and privacy / 使用与隐私说明
+    url: https://iherb-cart-saver-feed.vercel.app/support.html
+    about: Read how the extension works and what information stays on your device.

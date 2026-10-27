@@ -1,0 +1,26 @@
+[Unit]
+Description=Collect region-scoped iHerb offers
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=iherb-feed
+Group=iherb-feed
+WorkingDirectory=/opt/iherb-cart-saver
+Environment=IHERB_STATE_DIR=/var/lib/iherb-cart-saver
+Environment=IHERB_PUBLISH_MODE=origin
+Environment=IHERB_SOURCE_BACKEND=reader
+EnvironmentFile=/etc/iherb-cart-saver/collector.env
+ExecStart=/opt/iherb-cart-saver/.venv/bin/python /opt/iherb-cart-saver/tools/publish_offers.py
+StateDirectory=iherb-cart-saver
+TimeoutStartSec=180
+MemoryMax=128M
+CPUQuota=25%
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+

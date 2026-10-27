@@ -1,0 +1,25 @@
+[Unit]
+Description=Read-only iHerb offer feed origin
+After=network-online.target
+
+[Service]
+User=iherb-feed
+Group=iherb-feed
+WorkingDirectory=/opt/iherb-cart-saver
+Environment=IHERB_STATE_DIR=/var/lib/iherb-cart-saver
+Environment=IHERB_ORIGIN_CERT=/etc/iherb-cart-saver/origin.crt
+Environment=IHERB_ORIGIN_KEY=/etc/iherb-cart-saver/origin.key
+ExecStart=/opt/iherb-cart-saver/.venv/bin/python /opt/iherb-cart-saver/tools/serve_feed.py
+Restart=on-failure
+RestartSec=10
+MemoryMax=96M
+CPUQuota=20%
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target
+

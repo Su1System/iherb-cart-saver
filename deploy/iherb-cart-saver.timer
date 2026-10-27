@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh official iHerb offers every six hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:10:00 UTC
+RandomizedDelaySec=60
+Persistent=true
+Unit=iherb-cart-saver.service
+
+[Install]
+WantedBy=timers.target
+
