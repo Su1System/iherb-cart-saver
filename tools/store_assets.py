@@ -29,7 +29,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(OUT/'02-cashback-en.png'))
     page.locator('#iherb-cart-saver #lang').click()
     page.locator('#iherb-cart-saver #cashback-label').click()
-    page.locator('#iherb-cart-saver #saving').scroll_into_view_if_needed()
+    page.locator('#iherb-cart-saver h1').scroll_into_view_if_needed()
     page.screenshot(path=str(OUT/'03-chinese.png'))
     promo=browser.new_page(viewport={'width':440,'height':280},device_scale_factor=1)
     promo.set_content('''<!doctype html><html><body style="margin:0;background:#244e39;color:#eff5df;font-family:system-ui;overflow:hidden"><div style="padding:36px 38px"><div style="font-size:13px;letter-spacing:3px;color:#dceda8">↘ CART SAVER</div><h1 style="font-size:38px;line-height:1.12;letter-spacing:-1px;margin:23px 0 17px">Keep the cart.<br>Find the saving.</h1><div style="font-size:13px;color:#d2dfc3">For iHerb · Open source · No signup</div></div></body></html>''')
