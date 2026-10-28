@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cart Saver for iHerb",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Check official promo codes against your actual iHerb cart, compare totals, and apply your choice. Open source; no signup.",
   "permissions": ["activeTab", "scripting", "storage", "alarms"],
   "host_permissions": ["https://au.iherb.com/*", "https://www.iherb.com/*", "https://sg.iherb.com/*", "https://iherb-cart-saver-feed.vercel.app/*"],

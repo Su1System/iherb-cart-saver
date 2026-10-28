@@ -44,7 +44,8 @@ with sync_playwright() as p:
         assert 'GOLDAU' in extracted['codes'],extracted
         assert extracted.get('kind')=='feed',extracted
         if not extracted['ok']:print('Live official page fetch unavailable; timestamped official cache verified (no claim of fresh network fetch)')
-        # Same bundled panel, isolated-world injection. It auto-starts after popup action.
+        # Same bundled panel in the isolated world. Popup routing is covered separately
+        # in popup.test.cjs; this proves the real script/worker/adapter integration.
         worker.evaluate('''async()=>{
           const tabs=await chrome.tabs.query({});const tab=tabs.find(t=>t.url==='https://www.iherb.com/cart');
           await chrome.scripting.executeScript({target:{tabId:tab.id},files:['panel.js']});
@@ -52,19 +53,20 @@ with sync_playwright() as p:
         page.get_by_text('Checked. Original code restored. Apply when ready.',exact=True).wait_for(timeout=35000)
         page.locator('#iherb-cart-saver #apply').click()
         page.get_by_text('Applied GOLDAU. Total $292.91.',exact=True).wait_for(timeout=10000)
+        assert page.locator('#iherb-cart-saver #done').is_visible()
         extension_id=worker.url.split('/')[2]
         popup=ctx.new_page();popup.goto(f'chrome-extension://{extension_id}/popup.html')
-        assert popup.locator('#open').inner_text()=='Check my cart'
+        popup.get_by_text('Open iHerb cart',exact=True).wait_for()
         assert popup.locator('#feedback').get_attribute('href')=='https://github.com/Su1System/iherb-cart-saver/issues/new/choose'
         assert popup.locator('#privacy').get_attribute('href')=='https://iherb-cart-saver-feed.vercel.app/privacy.html'
         assert popup.locator('#version').inner_text()=='v'+manifest['version']+' beta'
         popup.locator('#language').click()
-        assert popup.locator('#open').inner_text()=='检查我的购物车'
+        assert popup.locator('#open').inner_text()=='打开 iHerb 购物车'
         assert popup.locator('#feedback').inner_text()=='反馈问题'
         popup.reload()
-        popup.get_by_text('检查我的购物车',exact=True).wait_for()
+        popup.get_by_text('打开 iHerb 购物车',exact=True).wait_for()
         popup.locator('#language').click()
-        assert popup.locator('#open').inner_text()=='Check my cart'
+        assert popup.locator('#open').inner_text()=='Open iHerb cart'
         page.locator('#iherb-cart-saver #cashback-label').click()
         page.locator('#iherb-cart-saver #cashback-market').select_option('AU')
         # Verify preference persistence, without injecting or changing affiliate attribution.

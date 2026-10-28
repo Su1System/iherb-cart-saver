@@ -6,13 +6,15 @@ Check promo codes against your actual iHerb cart, compare the total, and apply y
 
 ## Install and use
 
-The Chrome Web Store listing is being prepared. There is no published store installation link yet. Once approved, the store will provide **Add to Chrome** and automatic extension updates. Regular users will not need GitHub, an AI key, a server, or any configuration.
+Version 0.3.1 has been submitted to Chrome Web Store for review; publication has not yet been confirmed. This source contains version 0.3.2, prepared for the next store update. Once approved, the store will provide **Add to Chrome** and automatic extension updates. Regular users will not need GitHub, an AI key, a server, or any configuration.
 
 For an early developer preview, download the extension ZIP from a maintainer-published GitHub release, unzip it, enable Developer mode at `chrome://extensions`, and select **Load unpacked**. This is a developer preview, not the one-click store installation.
 
 1. Open your iHerb cart with a supported delivery country and currency.
-2. Click Cart Saver → **Check my cart**. Checking temporarily tries up to six candidate codes in the site's coupon field, then restores your original code when possible.
-3. Review the measured saving and choose **Apply**. Review iHerb's final checkout total before paying.
+2. Click the Cart Saver icon. Checking starts immediately on the cart, tries up to six candidate codes, then restores your original code when possible. From another page, choose **Open iHerb cart**, then click the icon on your cart.
+3. Review **Total if applied** and choose **Apply · save**. The panel confirms **Applied · current total**; choose **Done** to close it. Review iHerb's final checkout total before paying.
+
+Reopening an existing panel keeps its results; **Check again** runs a new comparison. Other ways to save, tested-code details and cashback stay out of the main action. If no tested code improves the price, relevant alternatives expand automatically.
 
 The beta supports Australia, the United States and Singapore, with AUD, USD and SGD prices. Codes follow the delivery country, not your VPN, display language or currency alone. The shared official-offer feed updates every six hours. Expired feed records are not treated as fresh codes, and a code is never guaranteed to work just because it appears in the feed.
 
