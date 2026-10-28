@@ -6,7 +6,7 @@ Check promo codes against your actual iHerb cart, compare the total, and apply y
 
 ## Install and use
 
-Version 0.3.1 has been submitted to Chrome Web Store for review; publication has not yet been confirmed. This source contains version 0.3.2, prepared for the next store update. Once approved, the store will provide **Add to Chrome** and automatic extension updates. Regular users will not need GitHub, an AI key, a server, or any configuration.
+Version **0.3.2** was submitted to Chrome Web Store on 28 October 2026 and is **pending review**. It replaces the earlier 0.3.1 submission. There is no published store installation link yet. Once approved, the store will provide **Add to Chrome** and automatic extension updates. Regular users will not need GitHub, an AI key, a server, or any configuration.
 
 For an early developer preview, download the extension ZIP from a maintainer-published GitHub release, unzip it, enable Developer mode at `chrome://extensions`, and select **Load unpacked**. This is a developer preview, not the one-click store installation.
 
