@@ -2,7 +2,7 @@
   'use strict';
   if(document.getElementById('iherb-cart-saver')){document.getElementById('iherb-cart-saver').hidden=false;return;}
   const C=root.IHerbSaverCore, A=root.IHerbSaverAdapter;
-  let zh=root.__IHERB_SAVER_LANG__==='zh', report=null, busy=false, cancel=false, sourceNote='';
+  let zh=root.__IHERB_SAVER_LANG__==='zh', report=null, appliedResult=null, busy=false, cancel=false, sourceNote='';
   const translations=new Map();
   const t=(cn,en)=>{translations.set(cn,[cn,en]);translations.set(en,[cn,en]);return zh?cn:en;};
   const host=document.createElement('div');host.id='iherb-cart-saver';
@@ -27,8 +27,8 @@
     <h1 id="heading"></h1><p id="subheading"></p><p class="hint" id="region"></p>
     <div class="total"><div class="caption" id="total-label"></div><div><span class="was hidden" id="was"></span><span class="amount" id="total">—</span></div><div class="saving" id="saving"></div></div>
     <div class="status" id="status" role="status" aria-live="polite"></div>
-    <button class="primary" id="check"></button><button class="primary hidden" id="apply"></button><button class="secondary hidden" id="cancel"></button>
-    <p class="hint" id="hint"></p><div id="advice"></div>
+    <button class="primary hidden" id="apply"></button><button class="primary hidden" id="done"></button><button class="primary" id="check"></button><button class="secondary hidden" id="cancel"></button>
+    <p class="hint" id="hint"></p><details id="alternatives" class="hidden"><summary id="alternatives-label"></summary><div id="advice"></div></details>
     <details id="cashback"><summary id="cashback-label"></summary><p class="merchant" id="cashback-text"></p><label class="merchant" for="cashback-market" id="cashback-market-label"></label><select id="cashback-market" style="width:100%;padding:9px;margin:6px 0;border:1px solid #cbd7c3;border-radius:8px;background:white;color:#19392d"><option value=""></option><option value="AU"></option><option value="SG"></option><option value="OTHER"></option></select><p class="merchant" id="cashback-eligibility"></p><a id="cashback-link" class="hidden" target="_blank" rel="noopener noreferrer"></a><p class="hint" id="cashback-note"></p></details>
     <details id="results" class="hidden"><summary id="results-label"></summary><div id="rows"></div></details>
     <p class="hint" id="source-note"></p>
@@ -43,9 +43,11 @@
     $('total-label').textContent=t('当前购物车总价','Current cart total');
     $('check').textContent=t('检查优惠','Check savings');
     $('apply').textContent=t('一键应用','Apply this code');
+    $('done').textContent=t('完成','Done');
     $('cancel').textContent=t('停止并还原','Stop & restore');
     $('hint').textContent=t('检查会暂时替换优惠码，完成后还原。请保持购物车不变；商品、数量和付款由你决定。','Checking temporarily switches codes, then restores yours. Keep the cart unchanged. You control items and payment.');
     $('results-label').textContent=t('查看实测结果','See tested codes');
+    $('alternatives-label').textContent=t('其他省钱办法','Other ways to save');
     $('manual-label').textContent=t('我还有其他优惠码','Have another code?');
     $('manual-hint').textContent=t('可选，用逗号分隔；最多检查 6 个。','Optional. Separate with commas; up to 6 codes.');
     $('cashback-label').textContent=t('还可以查 Cashback，由你决定','Optional: check cashback');
@@ -107,15 +109,25 @@
   window.addEventListener('beforeunload',beforeLeave);
   function controls(){
     $('check').disabled=busy;$('manual').disabled=busy;$('lang').disabled=busy;$('cashback-market').disabled=busy;
-    $('check').className=report?.best?'secondary':'primary';
-    $('check').textContent=report?t('重新检查','Check again'):t('检查优惠','Check savings');
+    $('check').className=report?.best||appliedResult?'secondary':'primary';
+    $('check').textContent=report||appliedResult?t('重新检查','Check again'):t('检查优惠','Check savings');
     $('apply').classList.toggle('hidden',busy||!report?.best);
+    $('done').classList.toggle('hidden',busy||!appliedResult);
     $('cancel').classList.toggle('hidden',!busy);
+    $('hint').classList.toggle('hidden',!!appliedResult);
+  }
+  function renderApplied(){
+    if(!appliedResult)return;
+    const {code,totalCents,currency,savingsCents}=appliedResult;
+    $('total-label').textContent=t('已应用 · 当前总价','Applied · current total');
+    $('total').textContent=C.formatMoney(totalCents,currency);
+    $('saving').textContent=t(`已省 ${C.formatMoney(savingsCents,currency)} · ${code}`,`Saved ${C.formatMoney(savingsCents,currency)} · ${code}`);
+    $('alternatives').classList.add('hidden');
   }
   function renderReport(){
     if(!report)return;
     const fmt=n=>C.formatMoney(n,report.original.currency);
-    $('total-label').textContent=report.best?t('已实测的最低总价','Lowest tested total'):t('保留当前购物车总价','Keep your current total');
+    $('total-label').textContent=report.best?t('应用后的总价','Total if applied'):t('保留当前购物车总价','Keep your current total');
     $('total').textContent=fmt(report.best?.totalCents??report.original.totalCents);
     $('was').textContent=fmt(report.original.totalCents);$('was').classList.toggle('hidden',!report.best);
     $('saving').textContent=report.best?t(`比检查前再省 ${fmt(report.savingsCents)}`,`Save ${fmt(report.savingsCents)} more than before`):t('没有更低价，也会如实告诉你。','No better price found among tested codes.');
@@ -138,20 +150,19 @@
     }
     $('results').classList.remove('hidden');$('advice').replaceChildren();
     for(const a of C.advice(report)){
-      if(a.kind==='keep') continue;
+      if(a.kind==='keep'||a.kind==='verified') continue;
       const box=document.createElement('div');box.className='advice';
       const title=document.createElement('strong'),body=document.createElement('span');
       title.textContent=t('还可以这样买','Another way to save');
-      if(a.kind==='verified'){
-        title.textContent=t('已验证的替代方案','Verified alternative');
-        body.textContent=t(`换用 ${a.code}，这单总价 ${fmt(a.amount)}。`,`Use ${a.code}: this cart totals ${fmt(a.amount)}.`);
-      }else if(a.kind==='minimum') body.textContent=t('有的码没达到门槛。先看已测过的其他码；只有本来就要补货时，才考虑合单，别为折扣多买。','Some codes require a higher eligible spend. Try a verified alternative; combine only items you already need.');
+      if(a.kind==='minimum') body.textContent=t('有的码没达到门槛。先看已测过的其他码；只有本来就要补货时，才考虑合单，别为折扣多买。','Some codes require a higher eligible spend. Try a verified alternative; combine only items you already need.');
       else if(a.kind==='split') body.textContent=t(`这个码只覆盖部分商品。不适用：${a.excluded.join('、')}。可把适用商品单独下单，剩余商品另用优惠；两单运费和下次价格尚未核实，暂不计入节省。`,`This code covers part of the cart. Excluded: ${a.excluded.join(', ')}. Consider a separate order for eligible items; shipping on both orders and later prices must be checked first.`);
       else if(a.kind==='new-customer') body.textContent=t('新客码不适用时，试上方已验证的老客优惠；不必为了折扣注册新账户。','If a new-customer code is unavailable, use a tested returning-customer offer above.');
       else if(a.kind==='app-only') body.textContent=t('这是 App 专享优惠。可以在 iHerb App 核对同一购物车总价，再决定是否在那里付款。','This is an app-only offer. Compare the same cart total in the iHerb app before deciding.');
       else body.textContent=t('部分品牌或商品可能被排除。优先选上方已验证的其他码；也可等品牌促销，或手动核对同规格商品，价格未验证前不算节省。','Some brands or products are excluded. Prefer a tested alternative, or check a brand sale or matching product; unverified prices are not counted as savings.');
       box.append(title,body);$('advice').append(box);
     }
+    $('alternatives').classList.toggle('hidden',!$('advice').childElementCount);
+    $('alternatives').open=!report.best;
   }
   async function collect(country){
     sourceNote='';
@@ -178,7 +189,8 @@
   }
   async function check(){
     if(busy)return;
-    busy=true;cancel=false;report=null;controls();$('saving').textContent='';$('was').classList.add('hidden');$('advice').replaceChildren();$('results').classList.add('hidden');
+    busy=true;cancel=false;report=null;appliedResult=null;controls();$('saving').textContent='';$('was').classList.add('hidden');$('advice').replaceChildren();$('alternatives').classList.add('hidden');$('results').classList.add('hidden');
+    $('total-label').textContent=t('当前购物车总价','Current cart total');$('total').textContent='—';
     try{
       if(document.querySelector('#coupon-input')?.value.trim())throw new Error('INPUT_PENDING');
       const original=C.validate(await A.snapshot());
@@ -189,7 +201,9 @@
       $('source-note').textContent=sourceNote;
       report=await C.scan(A,offers,{cancelled:()=>cancel,progress:p=>status(p.restoring?t('正在还原原优惠…','Restoring your original code…'):t(`正在核实 ${p.index}/${p.total}：${p.code}`,`Checking ${p.index}/${p.total}: ${p.code}`))});
       renderReport();
-      status(report.cancelled?t('已停止，原优惠已还原。','Stopped. Original code restored.'):t('检查完成，原优惠已还原。你选好后再应用。','Checked. Original code restored. Apply when ready.'));
+      status(report.cancelled?t('已停止，原优惠已还原。','Stopped. Original code restored.'):
+        report.best?t('检查完成，原优惠已还原。你选好后再应用。','Checked. Original code restored. Apply when ready.'):
+          t('未找到更低价，已还原当前优惠。','No better price found. Your current code is restored.'));
     }catch(e){fail(e);}finally{busy=false;controls();}
   }
   $('check').onclick=check;
@@ -197,16 +211,24 @@
   $('apply').onclick=async()=>{
     if(busy||!report?.best)return;
     busy=true;controls();status(t('正在应用并核对总价…','Applying and verifying the total…'));
-    try{const applied=await C.apply(A,report);status(t(`已应用 ${report.best.code}，总价 ${C.formatMoney(applied.totalCents,applied.currency)}。`,`Applied ${report.best.code}. Total ${C.formatMoney(applied.totalCents,applied.currency)}.`));report=null;}
-    catch(e){report=null;fail(e);}finally{busy=false;controls();}
+    try{
+      const checked=report, applied=await C.apply(A,checked);
+      appliedResult={code:checked.best.code,totalCents:applied.totalCents,currency:applied.currency,savingsCents:checked.original.totalCents-applied.totalCents};
+      report=null;renderApplied();
+      status(t(`已应用 ${appliedResult.code}，总价 ${C.formatMoney(applied.totalCents,applied.currency)}。`,`Applied ${appliedResult.code}. Total ${C.formatMoney(applied.totalCents,applied.currency)}.`));
+    }catch(e){
+      report=null;appliedResult=null;$('saving').textContent='';$('was').classList.add('hidden');$('alternatives').classList.add('hidden');
+      $('total').textContent='—';$('total-label').textContent=t('需要重新检查','Check required');fail(e);
+    }finally{busy=false;controls();}
   };
+  $('done').onclick=()=>{if(!busy)host.hidden=true;};
   $('close').onclick=()=>{if(busy){cancel=true;status(t('请等原优惠还原后关闭。','Wait for the original code to be restored.'));}else host.hidden=true;};
   $('lang').onclick=()=>{
     zh=!zh;root.__IHERB_SAVER_LANG__=zh?'zh':'en';
     for(const id of ['status','source-note','saving']){
       const pair=translations.get($(id).textContent);if(pair)$(id).textContent=t(...pair);
     }
-    labels();renderReport();controls();
+    labels();renderReport();renderApplied();controls();
     document.dispatchEvent(new CustomEvent('cart-saver-language',{detail:zh?'zh':'en'}));
     savePreferences({language:zh?'zh':'en'});
   };
@@ -221,13 +243,13 @@
   const regionObserver=new MutationObserver(()=>{
     const next=JSON.stringify(A.currencyInfo());
     if(next===regionKey)return;
-    regionKey=next;report=null;cancel=true;renderRegion();controls();
-    $('apply').classList.add('hidden');$('results').classList.add('hidden');$('advice').replaceChildren();$('saving').textContent='';$('was').classList.add('hidden');
+    regionKey=next;report=null;appliedResult=null;cancel=true;renderRegion();controls();
+    $('apply').classList.add('hidden');$('results').classList.add('hidden');$('advice').replaceChildren();$('alternatives').classList.add('hidden');$('saving').textContent='';$('was').classList.add('hidden');
     $('total').textContent='—';$('total-label').textContent=t('需要重新检查','Check required');
     status(t('收货地区或币种已变化，请重新检查优惠。','Delivery market or currency changed. Check savings again.'));
   });
   regionObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
-  // Clicking "Check my cart" in the extension popup is the explicit start action.
+  // Opening Cart Saver on a supported cart is the explicit start action.
   if(!root.__IHERB_SAVER_TEST__){
     (async()=>{
       try{
